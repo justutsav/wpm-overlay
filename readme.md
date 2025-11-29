@@ -4,6 +4,9 @@ A simple and lightweight WPM (Words Per Minute) overlay built with Python, Tkint
 Tracks your typing speed in real-time, shows 15s / 30s / 60s WPM, and displays a small graph of your recent performance.
 The overlay floats above all windows and can be dragged anywhere on your screen.
 
+# 📸 Screenshots
+<p align="center"> <img src="https://raw.githubusercontent.com/justutsav/wpm-overlay/master/Screenshots/Slow.png" width="420" alt="Slow WPM screenshot"/> <br><em>Slow WPM</em> </p> <p align="center"> <img src="https://raw.githubusercontent.com/justutsav/wpm-overlay/master/Screenshots/Medium.png" width="420" alt="Medium WPM screenshot"/> <br><em>Medium WPM</em> </p> <p align="center"> <img src="https://raw.githubusercontent.com/justutsav/wpm-overlay/master/Screenshots/Fast.png" width="420" alt="Fast WPM screenshot"/> <br><em>Fast WPM</em> </p> <p align="center"> <img src="https://raw.githubusercontent.com/justutsav/wpm-overlay/master/Screenshots/Lightning%20mcqueen.png" width="420" alt="Lightning McQueen WPM screenshot"/> <br><em>Lightning McQueen Mode ⚡</em> </p>
+
 # 🚀 Features
 
 📌 Global keystroke tracking (works in all apps)
