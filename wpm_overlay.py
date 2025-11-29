@@ -15,14 +15,6 @@ Features:
 
 Requirements:
     pip install pynput
-    (tkinter is included with standard Python on Windows/macOS/Linux, but on some Linux distros you may need to install it separately.)
-
-Usage:
-    python wpm_overlay.py
-
-Permissions:
-- On Windows: if you see missed keys in the browser, run the script as Administrator.
-- On macOS: grant Accessibility permission to the Python interpreter when prompted.
 """
 
 import tkinter as tk
@@ -39,6 +31,13 @@ HISTORY_LEN = 60               # how many samples to keep for graph (roughly sec
 LOG_KEYS = False               # if True, write raw captured events to keys.log
 COUNT_WORDS_MODE = False       # False => count keystrokes (including spaces)
                                # True  => count completed words (increment on space/enter)
+# Color thresholds (you can tweak these)
+COLOR_THRESHOLDS = {
+    "slow": (30, "#ff4d4f"),   # <=30 red
+    "avg":  (60, "#ffb020"),   # <=60 orange
+    "good": (90, "#00c853"),   # <=90 green
+    "best": (9999, "#00bcd4")  # >90 cyan
+}
 # -----------------------------------
 
 class WPMTracker:
@@ -50,7 +49,7 @@ class WPMTracker:
         self.root.attributes('-topmost', True)
         self.root.geometry("300x150+100+100")
         self.bg_color = '#1e1e1e'
-        self.fg_color = '#00ff00'
+        self.fg_color = '#00ff00'  # initial accent color
         self.root.configure(bg=self.bg_color)
         self.root.attributes('-alpha', 0.90)  # semi-opaque
 
@@ -218,6 +217,14 @@ class WPMTracker:
         wpm = int(words / minutes) if minutes > 0 else 0
         return wpm
 
+    # ---------- Color helper ----------
+    def get_color_for_wpm(self, wpm):
+        """Return a hex color based on WPM thresholds (editable in COLOR_THRESHOLDS)."""
+        for name, (thr, col) in COLOR_THRESHOLDS.items():
+            if wpm <= thr:
+                return col
+        return COLOR_THRESHOLDS["best"][1]
+
     # ---------- Graph drawing ----------
     def draw_graph(self):
         self.canvas.delete("all")
@@ -230,17 +237,23 @@ class WPMTracker:
         max_wpm = max(10, max_wpm)
 
         num_points = len(self.wpm_history)
-        if num_points == 1:
-            step_x = width
-        else:
-            step_x = width / (num_points - 1)
+        pad_x = 6
+        usable_w = max(1, width - 2 * pad_x)
 
         points = []
         for i, w in enumerate(self.wpm_history):
-            x = i * step_x
+            if num_points == 1:
+                rx = 0.5
+            else:
+                rx = i / (num_points - 1)
+            x = pad_x + rx * usable_w
             y = height - ((w / max_wpm) * height)
+            # clamp y
+            y = max(1, min(height - 1, y))
             points.extend((x, y))
+
         if len(points) >= 4:
+            # graph uses current accent color
             self.canvas.create_line(points, fill=self.fg_color, width=2, smooth=True)
 
     # ---------- UI update loop ----------
@@ -249,9 +262,15 @@ class WPMTracker:
         w30 = self.calculate_wpm(30)
         w60 = self.calculate_wpm(60)
 
-        self.label_15s.config(text=f"15s: {w15} WPM")
-        self.label_30s.config(text=f"30s: {w30} WPM")
-        self.label_60s.config(text=f"60s: {w60} WPM")
+        # update accent color based on 15s WPM (fast feedback)
+        new_color = self.get_color_for_wpm(w15)
+        if new_color != self.fg_color:
+            self.fg_color = new_color
+
+        # apply color to labels
+        self.label_15s.config(text=f"15s: {w15} WPM", fg=self.fg_color)
+        self.label_30s.config(text=f"30s: {w30} WPM", fg=self.fg_color)
+        self.label_60s.config(text=f"60s: {w60} WPM", fg=self.fg_color)
 
         # append latest sample for graph (we choose to graph 15s instantaneous WPM)
         self.wpm_history.append(w15)
