@@ -34,9 +34,9 @@ COUNT_WORDS_MODE = False       # False => count keystrokes (including spaces)
 # Color thresholds (you can tweak these)
 COLOR_THRESHOLDS = {
     "slow": (30, "#ff4d4f"),   # <=30 red
-    "avg":  (60, "#ffb020"),   # <=60 orange
+    "avg":  (60, "#ffad14"),   # <=60 orange
     "good": (90, "#00c853"),   # <=90 green
-    "best": (9999, "#00bcd4")  # >90 cyan
+    "best": (9999, "#02d9f6")  # >90 cyan
 }
 # -----------------------------------
 
@@ -47,8 +47,13 @@ class WPMTracker:
         self.root.title("WPM Tracker")
         self.root.overrideredirect(True)
         self.root.attributes('-topmost', True)
-        self.root.geometry("300x150+100+100")
-        self.bg_color = '#1e1e1e'
+        self.root.geometry("300x180")  # start near top-left
+
+        # Change to this if you want to start at the right side
+        # screen_w = self.root.winfo_screenwidth()
+        # self.root.geometry(f"300x180+{screen_w - 300}+0")  # start near top-right
+
+        self.bg_color = "#000000"
         self.fg_color = '#00ff00'  # initial accent color
         self.root.configure(bg=self.bg_color)
         self.root.attributes('-alpha', 0.90)  # semi-opaque
@@ -88,6 +93,9 @@ class WPMTracker:
         self.label_30s.pack(anchor='w')
         self.label_60s = tk.Label(self.frame, text="60s: 0 WPM", font=("Consolas", 10), fg=self.fg_color, bg=self.bg_color)
         self.label_60s.pack(anchor='w')
+        self.signature = tk.Label(self.frame, text="by justutsav", font=("hack", 7), fg=self.fg_color, bg=self.bg_color)
+        self.signature.pack(anchor="w", pady=(0, 6))
+
 
         self.canvas_height = 60
         self.canvas = tk.Canvas(self.frame, height=self.canvas_height, bg=self.bg_color, highlightthickness=0)
@@ -271,6 +279,7 @@ class WPMTracker:
         self.label_15s.config(text=f"15s: {w15} WPM", fg=self.fg_color)
         self.label_30s.config(text=f"30s: {w30} WPM", fg=self.fg_color)
         self.label_60s.config(text=f"60s: {w60} WPM", fg=self.fg_color)
+        self.signature.config(fg=self.fg_color)
 
         # append latest sample for graph (we choose to graph 15s instantaneous WPM)
         self.wpm_history.append(w15)
