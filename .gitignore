@@ -1,0 +1,13 @@
+# Build artifacts
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# Environment
+.env
+venv/

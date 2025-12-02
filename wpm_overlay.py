@@ -18,6 +18,7 @@ Requirements:
 """
 
 import tkinter as tk
+from tkinter import font as tkfont
 from pynput import keyboard
 import time
 from collections import deque
@@ -87,19 +88,44 @@ class WPMTracker:
         self.frame = tk.Frame(self.root, bg=self.bg_color)
         self.frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        self.label_15s = tk.Label(self.frame, text="15s: 0 WPM", font=("Consolas", 10), fg=self.fg_color, bg=self.bg_color)
+        # create resizable fonts (we will scale these)
+        self._base_width = 300    # the "design" width we started with
+        self._base_title_size = 18
+        self._base_stat_size = 15
+        self._base_small_size = 10
+
+        self.title_font = tkfont.Font(family="Consolas", size=self._base_title_size, weight="bold")
+        self.stat_font = tkfont.Font(family="Consolas", size=self._base_stat_size)
+        self.small_font = tkfont.Font(family="Consolas", size=self._base_small_size)
+
+        self.label_15s = tk.Label(self.frame, text="15s: 0 WPM", font=self.small_font, fg=self.fg_color, bg=self.bg_color)
         self.label_15s.pack(anchor='w')
-        self.label_30s = tk.Label(self.frame, text="30s: 0 WPM", font=("Consolas", 10), fg=self.fg_color, bg=self.bg_color)
+        self.label_30s = tk.Label(self.frame, text="30s: 0 WPM", font=self.small_font, fg=self.fg_color, bg=self.bg_color)
         self.label_30s.pack(anchor='w')
-        self.label_60s = tk.Label(self.frame, text="60s: 0 WPM", font=("Consolas", 10), fg=self.fg_color, bg=self.bg_color)
+        self.label_60s = tk.Label(self.frame, text="60s: 0 WPM", font=self.small_font, fg=self.fg_color, bg=self.bg_color)
         self.label_60s.pack(anchor='w')
-        self.signature = tk.Label(self.frame, text="by justutsav", font=("hack", 7), fg=self.fg_color, bg=self.bg_color)
-        self.signature.pack(anchor="w", pady=(0, 6))
+        self.signature = tk.Label(self.frame, text="by justutsav", font=self.small_font, fg=self.fg_color, bg=self.bg_color)
+        self.signature.pack(anchor='w', pady=(4,2))
 
 
         self.canvas_height = 60
         self.canvas = tk.Canvas(self.frame, height=self.canvas_height, bg=self.bg_color, highlightthickness=0)
         self.canvas.pack(fill=tk.X, pady=5)
+
+        # --- resizer handle (bottom-right small grip) ---
+        self.min_width = 200
+        self.min_height = 110
+
+        self._resize_orig = None  # hold (orig_mouse_x, orig_mouse_y, orig_w, orig_h)
+
+        self.resizer = tk.Frame(self.root, width=12, height=12, cursor="size_nw_se", bg=self.bg_color)
+        # place it so it visually sits at the bottom-right; adjust offsets if needed
+        self.resizer.place(relx=1.0, rely=1.0, x=-14, y=-14, anchor="se")
+
+        # bind resize events
+        self.resizer.bind("<Button-1>", self._start_resize)
+        self.resizer.bind("<B1-Motion>", self._do_resize)
+        self.resizer.bind("<Double-Button-1>", self._reset_size)
 
         # Bind dragging to multiple widgets so dragging works from any area
         for widget in (self.root, self.frame, self.canvas, self.close_button):
@@ -137,6 +163,80 @@ class WPMTracker:
             self.root.geometry(f"+{x}+{y}")
         except Exception:
             pass
+
+        # ---------- Resizing support ----------
+    def _start_resize(self, event):
+        """Begin a resize operation: store mouse + window size."""
+        # use root geometry to get current size
+        geom = self.root.geometry()  # format: WxH+X+Y
+        try:
+            size_part = geom.split('+')[0]
+            w, h = size_part.split('x')
+            cur_w = int(w)
+            cur_h = int(h)
+        except Exception:
+            cur_w = self._base_width
+            cur_h = 180
+
+        self._resize_orig = (event.x_root, event.y_root, cur_w, cur_h)
+
+    def _do_resize(self, event):
+        """Resize window while dragging the resizer."""
+        if not self._resize_orig:
+            return
+        x0, y0, ow, oh = self._resize_orig
+        dx = event.x_root - x0
+        dy = event.y_root - y0
+        new_w = max(self.min_width, ow + dx)
+        new_h = max(self.min_height, oh + dy)
+
+        # apply new geometry
+        try:
+            self.root.geometry(f"{new_w}x{new_h}+{self.root.winfo_x()}+{self.root.winfo_y()}")
+        except Exception:
+            pass
+
+        # scale fonts and graph to match new width
+        self._apply_scaling(new_w, new_h)
+
+    def _reset_size(self, event=None):
+        """Double-click reset to base size."""
+        default_w, default_h = self._base_width, 180
+        self.root.geometry(f"{default_w}x{default_h}+{self.root.winfo_x()}+{self.root.winfo_y()}")
+        self._apply_scaling(default_w, default_h)
+        self._resize_orig = None
+
+    def _apply_scaling(self, width, height):
+        """Scale font sizes and canvas height in proportion to width."""
+        # scale relative to design width
+        scale = max(0.6, width / float(self._base_width))
+
+        # compute scaled sizes
+        title_sz = max(9, int(self._base_title_size * scale))
+        stat_sz = max(8, int(self._base_stat_size * scale))
+        small_sz = max(7, int(self._base_small_size * scale))
+
+        try:
+            self.title_font.configure(size=title_sz)
+            self.stat_font.configure(size=stat_sz)
+            self.small_font.configure(size=small_sz)
+        except Exception:
+            pass
+
+        # scale canvas height mildly using height param (or width)
+        new_canvas_h = max(40, int(60 * scale))
+        self.canvas_height = new_canvas_h
+        try:
+            self.canvas.config(height=self.canvas_height)
+        except Exception:
+            pass
+
+        # reposition resizer (so it stays flush with bottom-right)
+        try:
+            self.resizer.place_configure(x=-14, y=-14)
+        except Exception:
+            pass
+
 
     # ---------- Key press handling ----------
     def on_press(self, key):
