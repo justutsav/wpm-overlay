@@ -7,7 +7,12 @@ The overlay floats above all windows and can be dragged anywhere on your screen.
 # 📸 Screenshots
 <p align="center"> <img src="https://raw.githubusercontent.com/justutsav/wpm-overlay/master/Screenshots/Slow.png" width="420" alt="Slow WPM screenshot"/> <br><em>Slow WPM</em> </p> <p align="center"> <img src="https://raw.githubusercontent.com/justutsav/wpm-overlay/master/Screenshots/Medium.png" width="420" alt="Medium WPM screenshot"/> <br><em>Medium WPM</em> </p> <p align="center"> <img src="https://raw.githubusercontent.com/justutsav/wpm-overlay/master/Screenshots/Fast.png" width="420" alt="Fast WPM screenshot"/> <br><em>Fast WPM</em> </p> <p align="center"> <img src="https://raw.githubusercontent.com/justutsav/wpm-overlay/master/Screenshots/Lightning%20mcqueen.png" width="420" alt="Lightning McQueen WPM screenshot"/> <br><em>Lightning McQueen Mode ⚡</em> </p>
 
-# 🚀 Features
+# � Download
+**[Download the latest version here](https://github.com/justutsav/wpm-overlay/releases)**
+
+Just download the `WPM Overlay.exe` and run it. No installation required!
+
+# �🚀 Features
 
 📌 Global keystroke tracking (works in all apps)
 
@@ -23,26 +28,34 @@ The overlay floats above all windows and can be dragged anywhere on your screen.
 
 🗝 Optional: raw key logging (for debugging)
 
-# 📦 Installation
+# �️ Development / Run from Source
 
-Install Python dependencies:
+If you want to run the Python script directly or modify the code:
+
+### 1. Install Dependencies
 ```bash
 pip install pynput
+# Tkinter is usually pre-installed on Windows/macOS.
+# On Linux: sudo apt install python3-tk
 ```
 
-Tkinter comes preinstalled on Windows/macOS.
-On Linux, install:
-```bash
-sudo apt install python3-tk
-```
-# ▶️ How to Run
-
-Run the overlay:
+### 2. Run the Script
 ```bash
 python wpm_overlay.py
 ```
 
-The overlay will appear on your screen and start tracking instantly.
+# 📦 Build it Yourself
+To create the executable (`.exe`) from source, we use PyInstaller.
+
+1.  Install PyInstaller:
+    ```bash
+    pip install pyinstaller
+    ```
+2.  Run the build command (uses the included `.spec` file):
+    ```bash
+    pyinstaller "WPM Overlay.spec"
+    ```
+3.  The executable will appear in the `dist/` folder.
 
 # 🎛 Basic Controls
 
@@ -83,8 +96,11 @@ set WPM_LOG_KEYS=1
 ```bash
 wpm-overlay/
 │
-├── wpm_overlay.py     # main application (single-file overlay)
-└── README.md          # documentation
+├── assets/            # Icons and images
+├── dist/              # Compiled executable (after build)
+├── wpm_overlay.py     # Main application source code
+├── WPM Overlay.spec   # PyInstaller build configuration
+└── README.md          # Documentation
 ```
 
 # 📝 License
