@@ -50,10 +50,6 @@ class WPMTracker:
         self.root.attributes('-topmost', True)
         self.root.geometry("300x180")  # start near top-left
 
-        # Change to this if you want to start at the right side
-        # screen_w = self.root.winfo_screenwidth()
-        # self.root.geometry(f"300x180+{screen_w - 300}+0")  # start near top-right
-
         self.bg_color = "#000000"
         self.fg_color = '#00ff00'  # initial accent color
         self.root.configure(bg=self.bg_color)
@@ -75,7 +71,6 @@ class WPMTracker:
             activeforeground="#ffffff"
         )
         self.close_button.place(relx=1.0, x=-10, y=10, anchor="ne")
-        self.root.after(100, lambda: self.close_button.lift())
 
         # Reset button
         self.reset_button = tk.Button(
@@ -90,7 +85,6 @@ class WPMTracker:
             activeforeground="#ffffff"
         )
         self.reset_button.place(relx=1.0, x=-40, y=10, anchor="ne")
-        self.root.after(100, lambda: self.reset_button.lift())
 
         # Top Speed Label
         self.top_speed_label = tk.Label(
@@ -101,7 +95,9 @@ class WPMTracker:
             bg=self.bg_color
         )
         self.top_speed_label.place(relx=1.0, x=-75, y=13, anchor="ne")
-        self.root.after(100, lambda: self.top_speed_label.lift())
+
+        for w in (self.close_button, self.reset_button, self.top_speed_label):
+            self.root.after(100, w.lift)
 
 
         # State & concurrency
@@ -270,6 +266,12 @@ class WPMTracker:
 
 
     # ---------- Key press handling ----------
+    def _commit_word(self, now):
+        """Commit the current word buffer as a completed word (word-mode only). Must be called with lock held."""
+        if self.current_word_chars:
+            self.timestamps.append(now)
+            self.current_word_chars = []
+
     def on_press(self, key):
         """
         Count a press if:
@@ -292,7 +294,6 @@ class WPMTracker:
             ch = getattr(key, 'char', None)
 
             should_count_keystroke = False
-            completed_word = False
 
             if ch is not None:
                 # ch is an actual character (could be ' ' in some environments)
@@ -307,23 +308,11 @@ class WPMTracker:
                     pass
             else:
                 # ch is None: handle known printable special keys
-                if key == keyboard.Key.space:
-                    # space counts as keystroke and also completes a word in word-mode
+                if key in (keyboard.Key.space, keyboard.Key.enter):
                     should_count_keystroke = True
                     if COUNT_WORDS_MODE:
                         with self.lock:
-                            if len(self.current_word_chars) > 0:
-                                # commit a word (timestamp)
-                                self.timestamps.append(now)
-                                self.current_word_chars = []
-                elif key == keyboard.Key.enter:
-                    # treat Enter as both keystroke and word completion
-                    should_count_keystroke = True
-                    if COUNT_WORDS_MODE:
-                        with self.lock:
-                            if len(self.current_word_chars) > 0:
-                                self.timestamps.append(now)
-                                self.current_word_chars = []
+                            self._commit_word(now)
                 else:
                     # ignore other special keys (shift, ctrl, alt, arrows, etc.)
                     should_count_keystroke = False
